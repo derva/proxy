@@ -17,7 +17,7 @@ type Logger struct {
 	Location    string
 }
 
-func (e *Logger) Log(s string) {
+func (e *Logger) Log(s string, print bool) {
 	f, err := os.OpenFile(e.Location+e.LogFileName, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 
 	if err != nil {
@@ -25,20 +25,23 @@ func (e *Logger) Log(s string) {
 		fmt.Println(err)
 	}
 
-	f.WriteString("[ " + time.Now().Format("01-02-2001 15:04:05") + " ] - " + s + "\n")
-	fmt.Println(s)
+	f.WriteString("[ " + time.Now().Format("01-02-2006 15:04:05") + " ] - " + s + "\n")
+
+	if print {
+		fmt.Println(s)
+	}
 }
 
 func Handle(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, r.URL.Host, http.StatusUseProxy)
 }
 
-func loadCertificate(certFile, keyFile string) tls.Certificate {
+func loadCertificate(certFile, keyFile string, l Logger) tls.Certificate {
 	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("Certificates are loaded!")
+	l.Log("Certificates are loaded", false)
 	return cert
 }
 
@@ -48,7 +51,7 @@ func main() {
 		Location:    "/var/log/",
 	}
 
-	l.Log("Server is starting ...")
+	l.Log("Server is starting ...", true)
 
 	if err := godotenv.Load(); err != nil {
 		fmt.Println("Error loading dotenv files!")
@@ -60,7 +63,7 @@ func main() {
 
 	tls := &tls.Config{
 		Certificates: []tls.Certificate{
-			loadCertificate(CertificatePath+"cert.pem", CertificatePath+"key.pem"),
+			loadCertificate(CertificatePath+"cert.pem", CertificatePath+"key.pem", l),
 		},
 	}
 
