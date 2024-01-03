@@ -45,6 +45,7 @@ func ChooseAlgorithm(algo string, l logger.Logger) string {
 }
 
 func Encoding(w http.ResponseWriter, r *http.Request, l logger.Logger) string {
+
 	resp, err := http.Get(r.URL.String())
 	if err != nil {
 		l.Log("Error fetching the data from host", true)
@@ -57,9 +58,12 @@ func Encoding(w http.ResponseWriter, r *http.Request, l logger.Logger) string {
 
 	val, ok := r.Header["Accept-Encoding"]
 
-	if ok {
-		l.Log("Encoding enabled ...", false)
+	if !ok {
+		l.Log("Encoding isn't enabled", true)
+		return "nil"
 	}
+
+	l.Log("Encoding enabled ...", false)
 
 	algo := ChooseAlgorithm(val[0], l)
 
