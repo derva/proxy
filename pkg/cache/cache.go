@@ -30,9 +30,10 @@ func GetWrapper(w http.ResponseWriter, r *http.Request) http.Response {
 }
 
 func Cache(req *http.Request, header string, l logger.Logger) (http.Response, error) {
+    var data http.Response
     l.Log("Cache function", true)
 
-    data, _ := ReadFromCache(req.URL.String())
+    data, _ = ReadFromCache(req.URL.String())
 
     if strings.Contains(header, "no-cache") {
         originRes, err := http.Head(req.URL.String())
@@ -40,16 +41,22 @@ func Cache(req *http.Request, header string, l logger.Logger) (http.Response, er
             l.Log("Error while fetching HEAD data from proxy", true)
             return http.Response{}, nil
         }
+
         modified := CheckLastModified(originRes.Header.Get("Last-Modified"), data.Header.Get("Last-Modified"))
 
-        if !modified {
+        if modified {
+            newData, err := http.Get(req.URL.String())
+            if err != nil {
+                fmt.Println("Error fetcing new data")
+            }
+            data = *newData
             fmt.Println("Everything up to date, using cached version :) ")
-            return data, nil
+        } else {
+            fmt.Println("Everything up to date, using cached version :) ")
         }
-
     }
 
-    return http.Response{}, nil
+    return data, nil
 }
 
 func CacheService(w http.ResponseWriter, req *http.Request, l logger.Logger) (http.Response, error) {
