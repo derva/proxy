@@ -1,82 +1,108 @@
 package handlers
 
 import (
-	"bufio"
-	"compress/gzip"
-	"fmt"
-	"io"
-	"net/http"
-	"os"
-	"strings"
+    "bufio"
+    "compress/gzip"
+    "fmt"
+    "io"
+    "net/http"
+    "os"
+    "strings"
 
-	"github.com/derva/proxy/pkg/logger"
+    "github.com/derva/proxy/pkg/logger"
 )
 
-func PreferredEncodingAlgorithm() string {
-	file, err := os.Open("conf.conf")
-	if err != nil {
-		fmt.Println("Error trying to open conf file")
-	}
-	defer file.Close()
+func LoadConfFile(search string) string {
+    file, err := os.Open("conf.conf")
+    if err != nil {
+        fmt.Println("Error trying to open configuration files")
+        fmt.Println(err)
+    }
 
-	scanner := bufio.NewScanner(file)
+    search = strings.ToUpper(search)
 
-	for scanner.Scan() {
-		line := scanner.Text()
-		if strings.Contains(line, "PREFERRED_ENCODING_ALGORITHM") {
-			value := strings.Split(line, "=")[1]
-			return value
-		}
-	}
-	return "nil"
+    defer file.Close()
 
+    scanner := bufio.NewScanner(file)
+
+    for scanner.Scan() {
+        line := scanner.Text()
+        if strings.Contains(line, search) {
+            value := strings.Split(line, "=")
+            return value[1]
+        }
+    }
+
+    return ""
+}
+
+func LoadConfFiles() map[string]string {
+    file, err := os.Open("conf.conf")
+
+    if err != nil {
+        fmt.Println("Error trying to open configuration files")
+        fmt.Println(err)
+    }
+
+    vector := make(map[string]string)
+    defer file.Close()
+
+    scanner := bufio.NewScanner(file)
+
+    for scanner.Scan() {
+        line := scanner.Text()
+        value := strings.Split(line, "=")
+        vector[value[0]] = value[1]
+    }
+    return vector
 }
 
 func ChooseAlgorithm(algo string, l logger.Logger) string {
-	prefered_algo := PreferredEncodingAlgorithm()
-	if strings.Contains(algo, prefered_algo) {
-		l.Log("Using preferred algorithm "+prefered_algo, true)
-		return prefered_algo
-	} else {
-		algos := strings.Split(algo, " ")
-		l.Log("Using algorithm "+algos[0], true)
-		return algos[0]
-	}
+    prefered_algo := LoadConfFile("PREFERRED_ENCODING_ALGORITHM")
+
+    if strings.Contains(algo, prefered_algo) {
+        l.Log("Using preferred algorithm " + prefered_algo, true)
+        return prefered_algo
+    } else {
+        algos := strings.Split(algo, " ")
+        l.Log("Using algorithm " + algos[0], true)
+        return algos[0]
+    }
 }
 
 func Encoding(w http.ResponseWriter, r *http.Request, l logger.Logger) string {
 
-	resp, err := http.Get(r.URL.String())
-	if err != nil {
-		l.Log("Error fetching the data from host", true)
-	}
+    resp, err := http.Get(r.URL.String())
+    if err != nil {
+        l.Log("Error fetching the data from host", true)
+    }
 
-	defer resp.Body.Close()
-	body, _ := io.ReadAll(resp.Body)
+    defer resp.Body.Close()
+    body, _ := io.ReadAll(resp.Body)
 
-	bodyString := string(body)
+    bodyString := string(body)
 
-	val, ok := r.Header["Accept-Encoding"]
+    val, ok := r.Header["Accept-Encoding"]
 
-	if !ok {
-		l.Log("Encoding isn't enabled", true)
-		return "nil"
-	}
+    if !ok {
+        l.Log("Encoding is empty, skipping it ...", true)
+        return "nil"
+    }
 
-	l.Log("Encoding enabled ...", false)
+    l.Log("Encoding enabled ...", false)
 
-	algo := ChooseAlgorithm(val[0], l)
+    algo := ChooseAlgorithm(val[0], l)
 
-	switch algo {
-	case "gzip":
-		l.Log("GZIP encoding ...", true)
-		w.Header().Set("Content-Encoding", "gzip")
+    switch algo {
+    case "gzip":
+        l.Log("GZIP encoding ...", true)
+        w.Header().Set("Content-Encoding", "gzip")
 
-		gz := gzip.NewWriter(w)
-		defer gz.Close()
+        gz := gzip.NewWriter(w)
+        defer gz.Close()
 
-		gz.Write([]byte(bodyString))
-		break
-	}
-	return "Encoding finished using " + algo + " algorithm."
+        gz.Write([]byte(bodyString))
+        break
+    }
+    return "Encoding finished using " + algo + " algorithm."
 }

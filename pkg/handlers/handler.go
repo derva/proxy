@@ -11,7 +11,7 @@ import (
 func GetResponse(w http.ResponseWriter, r *http.Request) *http.Response {
 	res, err := http.Get(r.URL.String())
 	if err != nil {
-		fmt.Println("Error while fetchin data from proxy")
+		fmt.Println("Error while fetching data from proxy")
 	}
 	//defer res.Body.Close()
 

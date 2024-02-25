@@ -1,30 +1,32 @@
 package main
 
 import (
-	"crypto/tls"
 	"fmt"
 	"net/http"
 
-	"github.com/derva/proxy/pkg/conf"
+	"crypto/tls"
+
 	"github.com/derva/proxy/pkg/handlers"
 	"github.com/derva/proxy/pkg/logger"
 	"github.com/gorilla/mux"
 )
 
 func main() {
+    conf := handlers.LoadConfFiles()
+
 	l := logger.Logger{
-		LogFileName: "proxy.log",
-		Location:    "/var/log/",
+		LogFileName: conf["LOG_FILE_NAME"],
+		Location:    conf["LOG_FILE_LOCATION"],
 	}
 
-	conf := conf.LoadConfFiles()
 	router := mux.NewRouter()
 
 	tls := &tls.Config{
 		Certificates: []tls.Certificate{
-			handlers.LoadCertificate(conf["certificate"]+"cert.pem", conf["certificate"]+"key.pem", l),
+			handlers.LoadCertificate(conf["CERTIFICATE_PATH"] + "cert.pem", conf["CERTIFICATE_PATH"]+"key.pem", l),
 		},
 	}
+
 
 	router.HandleFunc("/", handlers.HandleWrapper)
 
@@ -38,7 +40,6 @@ func main() {
 
 	err := s.ListenAndServe()
 	if err != nil {
-		fmt.Println("Error ListenAndServe")
 		fmt.Println(err)
 	}
 

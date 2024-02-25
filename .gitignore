@@ -1,5 +1,5 @@
 # .gitignore
+docs
 .env
-.todo
 headers.txt
 conf.conf
