@@ -38,7 +38,6 @@ func LoadConfFile(search string) string {
 
 func LoadConfFiles() map[string]string {
     file, err := os.Open("conf.conf")
-
     if err != nil {
         fmt.Println("Error trying to open configuration files")
         fmt.Println(err)
@@ -54,6 +53,7 @@ func LoadConfFiles() map[string]string {
         value := strings.Split(line, "=")
         vector[value[0]] = value[1]
     }
+
     return vector
 }
 

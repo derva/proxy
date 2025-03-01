@@ -16,7 +16,7 @@ func GetEnvVariable(key string) string {
 	return os.Getenv(key)
 }
 
-func LoadConfFiles() map[string]string {
+func LoadDotEnvFiles() map[string]string {
 
 	if err := godotenv.Load(); err != nil {
 		fmt.Println("Error loading dotenv files!")

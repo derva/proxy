@@ -23,7 +23,14 @@ func GetResponse(w http.ResponseWriter, r *http.Request) *http.Response {
 func HandleWrapper(w http.ResponseWriter, req *http.Request) {
 	l := logger.LoadLogger("proxy.log", "/var/log/")
 
-	cache.CacheService(w, req, l)
+    test, err := cache.CacheService(w, req, l)
+    if err != nil {
+        l.Log("nema errora", true);
+    }
+
+    l.Log("before status testing", true)
+    l.Log(test.Status, true);
 
 	Encoding(w, req, l)
+
 }

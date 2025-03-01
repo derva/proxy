@@ -66,21 +66,30 @@ func CacheService(w http.ResponseWriter, req *http.Request, l logger.Logger) (ht
     val := strings.ToLower(req.Header.Get("Cache-Control"))
 
     if len(val) == 0 {
-        fmt.Println("Cache-control isn't specified")
+        fmt.Println("Cache-control is not specified")
         return http.Response{}, nil
     }
 
     if strings.Contains(val, "no-store") {
-        l.Log("Caching is disabled, no-store directive/instructoin", true)
+        l.Log("Caching is disabled, no-store directive/instruction", true)
         return http.Response{}, nil
     }
 
+    if strings.Contains(val, "only-if-cached") {
+        if IsInCache(req.URL.String()) {
+            l.Log("only if cached, and it is cached", true)
+            //read from cache and return it
+        } else {
+            l.Log("Option 'only-if-cached' is enabled, and the content is not cached", true)
+            w.WriteHeader(http.StatusGatewayTimeout)
+            return http.Response{}, nil
+        }
+    }
+
+    //check for max-age
     if IsInCache(req.URL.String()) {
         data, err = Cache(req, val, l)
-        if err != nil {
-            l.Log("Error while getting data from cache", true)
-        }
-        return data, nil
+        return data, err
     } else {
         data = GetWrapper(w, req)
     }

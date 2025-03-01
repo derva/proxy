@@ -27,7 +27,6 @@ func main() {
 		},
 	}
 
-
 	router.HandleFunc("/", handlers.HandleWrapper)
 
 	s := http.Server{
